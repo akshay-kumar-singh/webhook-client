@@ -14,7 +14,7 @@ function Home() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await fetch('http://localhost:5000/webhook');
+        const res = await fetch('https://webhook-server-59gy.onrender.com/webhook');
         const data = await res.json();
         setEvents(data);
         setFiltered(data);
