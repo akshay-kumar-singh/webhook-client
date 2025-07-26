@@ -38,6 +38,22 @@ function Home() {
   const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
   const currentEvents = filtered.slice(indexOfFirstEvent, indexOfLastEvent);
 
+  // Calculate pagination display info
+  const getPaginationInfo = () => {
+    const totalItems = filtered.length;
+    
+    if (totalItems === 0) {
+      return { start: 0, end: 0, total: 0 };
+    }
+    
+    const start = indexOfFirstEvent + 1;
+    const end = Math.min(indexOfLastEvent, totalItems);
+    
+    return { start, end, total: totalItems };
+  };
+
+  const paginationInfo = getPaginationInfo();
+
   useEffect(() => {
     const loadStreak = async () => {
       try {
@@ -222,8 +238,14 @@ function Home() {
               <>
                 <div className="results-summary">
                   <span className="results-count">
-                    Showing {currentEvents.length} of {filtered.length}{" "}
-                    activities
+                    {paginationInfo.total > 0 ? (
+                      <>
+                        Showing {paginationInfo.start}-{paginationInfo.end} of{" "}
+                        {paginationInfo.total} activities
+                      </>
+                    ) : (
+                      "No activities found"
+                    )}
                   </span>
                 </div>
 
@@ -258,4 +280,3 @@ function Home() {
 }
 
 export default Home;
-// why this is not working
