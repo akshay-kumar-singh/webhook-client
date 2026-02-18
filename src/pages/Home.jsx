@@ -24,6 +24,7 @@ function Home() {
     linesOfCode: 0,
   });
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [longestStreak, setLongestStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userData, setUserData] = useState({
@@ -59,6 +60,7 @@ function Home() {
       try {
         const data = await fetchStreakData();
         setCurrentStreak(data.currentStreak);
+        setLongestStreak(data.longestStreak); 
       } catch (err) {
         console.error("Failed to load streak", err);
       }
@@ -173,6 +175,7 @@ function Home() {
         stats={stats}
         loading={loading}
         currentStreak={currentStreak}
+        longestStreak={longestStreak}
       />
 
       <main className="main-content">

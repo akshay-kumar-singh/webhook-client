@@ -10,6 +10,7 @@ const Navbar = ({
   stats,
   loading,
   currentStreak,
+  longestStreak,
 }) => {
   const containerVariants = {
     hidden: { opacity: 0, y: -50 },
@@ -58,6 +59,11 @@ const Navbar = ({
       emoji: "💻",
       value: loading ? "--" : `${(stats.linesOfCode / 1000).toFixed(1)}k`,
       label: "Lines of Code",
+    },
+    {
+      emoji: "🏆",
+      value: loading ? "--" : longestStreak,
+      label: "Highest Streak",
     },
     {
       emoji: "🔥",
