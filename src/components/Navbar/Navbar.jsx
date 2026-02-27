@@ -7,6 +7,9 @@ const Navbar = ({
   totalRepos,
   avatarUrl,
   userFullName,
+  bio,
+  followers,
+  following,
   stats,
   loading,
   currentStreak,
@@ -60,6 +63,16 @@ const Navbar = ({
       value: loading ? "--" : `${(stats.linesOfCode / 1000).toFixed(1)}k`,
       label: "Lines of Code",
     },
+    // {
+    //   emoji: "👥",
+    //   value: loading ? "--" : (followers ?? 0).toLocaleString(),
+    //   label: "Followers",
+    // },
+    // {
+    //   emoji: "👤",
+    //   value: loading ? "--" : (following ?? 0).toLocaleString(),
+    //   label: "Following",
+    // },
     {
       emoji: "🏆",
       value: loading ? "--" : longestStreak,
@@ -119,6 +132,11 @@ const Navbar = ({
             {userFullName && (
               <motion.p className="full-name" variants={itemVariants}>
                 {userFullName}
+              </motion.p>
+            )}
+            {bio && (
+              <motion.p className="user-bio" variants={itemVariants}>
+                {bio}
               </motion.p>
             )}
           </div>

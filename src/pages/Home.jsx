@@ -3,12 +3,19 @@ import EventCard from "../components/EventCard/EventCard";
 import Navbar from "../components/Navbar/Navbar";
 import FilterBar from "../components/FilterBar/FilterBar";
 import Pagination from "../components/Pagination/Pagination";
+import ActivityChart from "../components/ActivityChart/ActivityChart";
+// import EventDistributionChart from "../components/EventDistributionChart/EventDistributionChart";
+import TopRepos from "../components/TopRepos/TopRepos";
+import RepoGrid from "../components/RepoGrid/RepoGrid";
 import {
   fetchEventsFromServer,
   fetchCodeStats,
   fetchUserReposAndData,
   fetchTotalLinesOfCode,
   fetchStreakData,
+  fetchRepoStats,
+  fetchActivityTrends,
+  fetchEventDistribution,
 } from "../api/eventApi";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import Footer from "../components/Footer/Footer";
@@ -35,6 +42,13 @@ function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const eventsPerPage = 8;
 
+  // New state for charts & repos
+  const [trendData, setTrendData] = useState({ labels: [], events: [], linesChanged: [] });
+  const [timeRange, setTimeRange] = useState("7d");
+  const [distributionData, setDistributionData] = useState({ labels: [], values: [] });
+  const [repoStats, setRepoStats] = useState([]);
+  const [chartLoading, setChartLoading] = useState(true);
+
   const indexOfLastEvent = currentPage * eventsPerPage;
   const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
   const currentEvents = filtered.slice(indexOfFirstEvent, indexOfLastEvent);
@@ -42,14 +56,14 @@ function Home() {
   // Calculate pagination display info
   const getPaginationInfo = () => {
     const totalItems = filtered.length;
-    
+
     if (totalItems === 0) {
       return { start: 0, end: 0, total: 0 };
     }
-    
+
     const start = indexOfFirstEvent + 1;
     const end = Math.min(indexOfLastEvent, totalItems);
-    
+
     return { start, end, total: totalItems };
   };
 
@@ -60,7 +74,7 @@ function Home() {
       try {
         const data = await fetchStreakData();
         setCurrentStreak(data.currentStreak);
-        setLongestStreak(data.longestStreak); 
+        setLongestStreak(data.longestStreak);
       } catch (err) {
         console.error("Failed to load streak", err);
       }
@@ -126,6 +140,28 @@ function Home() {
     loadEvents();
   }, []);
 
+  // Load chart data
+  useEffect(() => {
+    const loadChartData = async () => {
+      setChartLoading(true);
+      try {
+        const [trends, distribution, stats] = await Promise.all([
+          fetchActivityTrends(timeRange),
+          fetchEventDistribution(),
+          fetchRepoStats(),
+        ]);
+        setTrendData(trends);
+        setDistributionData(distribution);
+        setRepoStats(stats);
+      } catch (error) {
+        console.error("Error loading chart data:", error);
+      } finally {
+        setChartLoading(false);
+      }
+    };
+    loadChartData();
+  }, [timeRange]);
+
   useEffect(() => {
     const { repo, action } = filters;
     const result = events.filter((event) => {
@@ -145,6 +181,10 @@ function Home() {
   const repoList = [
     ...new Set(events.map((e) => e.repo?.split("/")?.[1])),
   ].filter(Boolean);
+
+  const handleTimeRangeChange = (range) => {
+    setTimeRange(range);
+  };
 
   if (error && !userData.user) {
     return (
@@ -172,6 +212,9 @@ function Home() {
         totalRepos={userData.totalRepos}
         avatarUrl={userData.user?.avatar_url}
         userFullName={userData.user?.name}
+        bio={userData.user?.bio}
+        followers={userData.user?.followers}
+        following={userData.user?.following}
         stats={stats}
         loading={loading}
         currentStreak={currentStreak}
@@ -179,10 +222,48 @@ function Home() {
       />
 
       <main className="main-content">
-        <div className="activity-section">
+        {/* Charts Section */}
+        <section className="dashboard-section">
           <div className="section-header">
             <h2 className="section-title">
               <span className="title-icon">📊</span>
+              Dashboard Overview
+              <span className="title-accent"></span>
+            </h2>
+          </div>
+
+          <div className="charts-row">
+            <div className="chart-col chart-col-wide">
+              <ActivityChart
+                trendData={trendData}
+                timeRange={timeRange}
+                onTimeRangeChange={handleTimeRangeChange}
+                loading={chartLoading}
+              />
+            </div>
+            {/* <div className="chart-col chart-col-narrow">
+              <EventDistributionChart
+                distributionData={distributionData}
+                loading={chartLoading}
+              />
+            </div> */}
+          </div>
+
+          <div className="charts-row charts-row-bottom">
+            <div className="chart-col chart-col-half">
+              <TopRepos repoStats={repoStats} loading={chartLoading} />
+            </div>
+            <div className="chart-col chart-col-half">
+              <RepoGrid repos={userData.repos} loading={!userData.user} />
+            </div>
+          </div>
+        </section>
+
+        {/* Activity Section */}
+        <div className="activity-section">
+          <div className="section-header">
+            <h2 className="section-title">
+              <span className="title-icon">⚡</span>
               Recent Activity
               <span className="title-accent"></span>
             </h2>

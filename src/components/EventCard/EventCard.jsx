@@ -133,6 +133,16 @@ const EventCard = ({ formatted, event }) => {
           <span className="event-time">
             {new Date(event.timestamp).toLocaleString()}
           </span>
+          {(event.from_branch || event.to_branch) && (
+            <div className="branch-flow">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="6" y1="3" x2="6" y2="15" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M18 9a9 9 0 0 1-9 9" />
+              </svg>
+              <span className="branch-name">{event.from_branch || '—'}</span>
+              <span className="branch-arrow">→</span>
+              <span className="branch-name">{event.to_branch || '—'}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -156,6 +166,11 @@ const EventCard = ({ formatted, event }) => {
         >
           {event.action.replace("_", " ")}
         </span>
+        {event.lines_changed !== undefined && event.lines_changed !== 0 && (
+          <span className={`lines-changed ${event.lines_changed > 0 ? 'lines-added' : 'lines-removed'}`}>
+            {event.lines_changed > 0 ? '+' : ''}{event.lines_changed.toLocaleString()} lines
+          </span>
+        )}
       </div>
     </motion.div>
   );
