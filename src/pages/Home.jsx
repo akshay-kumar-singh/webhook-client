@@ -23,7 +23,6 @@ import "./Home.css";
 
 function Home() {
   const [events, setEvents] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [filters, setFilters] = useState({ repo: "", action: "" });
   const [stats, setStats] = useState({
@@ -40,6 +39,7 @@ function Home() {
     repos: [],
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const eventsPerPage = 8;
 
   // New state for charts & repos
@@ -49,21 +49,13 @@ function Home() {
   const [repoStats, setRepoStats] = useState([]);
   const [chartLoading, setChartLoading] = useState(true);
 
-  const indexOfLastEvent = currentPage * eventsPerPage;
-  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = filtered.slice(indexOfFirstEvent, indexOfLastEvent);
-
   // Calculate pagination display info
   const getPaginationInfo = () => {
-    const totalItems = filtered.length;
-
     if (totalItems === 0) {
       return { start: 0, end: 0, total: 0 };
     }
-
-    const start = indexOfFirstEvent + 1;
-    const end = Math.min(indexOfLastEvent, totalItems);
-
+    const start = (currentPage - 1) * eventsPerPage + 1;
+    const end = Math.min(currentPage * eventsPerPage, totalItems);
     return { start, end, total: totalItems };
   };
 
@@ -122,14 +114,15 @@ function Home() {
     const loadEvents = async () => {
       setLoading(true);
       try {
-        const data = await fetchEventsFromServer();
-        setEvents(data);
-        setFiltered(data);
-
-        setStats((prev) => ({
-          ...prev,
-          totalEvents: data.length,
-        }));
+        const data = await fetchEventsFromServer({
+          page: currentPage,
+          limit: eventsPerPage,
+          repo: filters.repo,
+          action: filters.action,
+          search: searchText
+        });
+        setEvents(data?.events || (Array.isArray(data) ? data : []));
+        setTotalItems(data?.totalEvents || (Array.isArray(data) ? data.length : 0));
       } catch (error) {
         console.error("Error loading events:", error);
         setError("Failed to load events");
@@ -137,8 +130,19 @@ function Home() {
         setLoading(false);
       }
     };
-    loadEvents();
-  }, []);
+    
+    // Simple debounce to prevent aggressive fetching while typing
+    const timeoutId = setTimeout(() => {
+      loadEvents();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [currentPage, filters, searchText]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchText]);
 
   // Load chart data
   useEffect(() => {
@@ -162,24 +166,8 @@ function Home() {
     loadChartData();
   }, [timeRange]);
 
-  useEffect(() => {
-    const { repo, action } = filters;
-    const result = events.filter((event) => {
-      const matchesRepo = repo ? event.repo?.includes(repo) : true;
-      const matchesAction = action ? event.action === action : true;
-      const matchesSearch = searchText
-        ? event.commit_messages?.some((msg) =>
-            msg.toLowerCase().includes(searchText.toLowerCase())
-          ) || event.repo?.toLowerCase().includes(searchText.toLowerCase())
-        : true;
-      return matchesRepo && matchesAction && matchesSearch;
-    });
-    setFiltered(result);
-    setCurrentPage(1);
-  }, [filters, searchText, events]);
-
   const repoList = [
-    ...new Set(events.map((e) => e.repo?.split("/")?.[1])),
+    ...new Set(repoStats.map((r) => r.name)),
   ].filter(Boolean);
 
   const handleTimeRangeChange = (range) => {
@@ -297,7 +285,7 @@ function Home() {
                   Some features may not work properly. Try refreshing the page.
                 </p>
               </div>
-            ) : currentEvents.length === 0 ? (
+            ) : events.length === 0 ? (
               <div className="no-results">
                 <div className="no-results-icon">🔍</div>
                 <h3>No matching events found</h3>
@@ -334,7 +322,7 @@ function Home() {
                 </div>
 
                 <div className="event-grid">
-                  {currentEvents.map((event, index) => (
+                  {events.map((event, index) => (
                     <EventCard
                       key={`${event.repo}-${event.timestamp}-${index}`}
                       formatted={event.formatted}
@@ -343,11 +331,11 @@ function Home() {
                   ))}
                 </div>
 
-                {filtered.length > eventsPerPage && (
+                {totalItems > eventsPerPage && (
                   <div className="pagination-wrapper">
                     <Pagination
                       eventsPerPage={eventsPerPage}
-                      totalEvents={filtered.length}
+                      totalEvents={totalItems}
                       currentPage={currentPage}
                       paginate={setCurrentPage}
                     />

@@ -1,13 +1,18 @@
 import { BACKEND_URL } from "../config/constants";
 
-export const fetchEventsFromServer = async () => {
+export const fetchEventsFromServer = async ({ page = 1, limit = 8, repo = "", action = "", search = "" } = {}) => {
   try {
-    const res = await fetch(`${BACKEND_URL}/webhook/events`);
+    const params = new URLSearchParams({ page, limit });
+    if (repo) params.append("repo", repo);
+    if (action) params.append("action", action);
+    if (search) params.append("search", search);
+
+    const res = await fetch(`${BACKEND_URL}/webhook/events?${params.toString()}`);
     if (!res.ok) throw new Error("Failed to fetch events");
     return await res.json();
   } catch (error) {
     console.error("❌ Error in fetchEventsFromServer:", error);
-    return [];
+    return { events: [], currentPage: 1, totalPages: 1, totalEvents: 0 };
   }
 };
 
