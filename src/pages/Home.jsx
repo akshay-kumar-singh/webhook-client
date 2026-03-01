@@ -15,7 +15,7 @@ import {
   fetchStreakData,
   fetchRepoStats,
   fetchActivityTrends,
-  fetchEventDistribution,
+  // fetchEventDistribution,
 } from "../api/eventApi";
 import SkeletonLoader from "../components/SkeletonLoader/SkeletonLoader";
 import Footer from "../components/Footer/Footer";
@@ -45,7 +45,7 @@ function Home() {
   // New state for charts & repos
   const [trendData, setTrendData] = useState({ labels: [], events: [], linesChanged: [] });
   const [timeRange, setTimeRange] = useState("7d");
-  const [distributionData, setDistributionData] = useState({ labels: [], values: [] });
+  // const [distributionData, setDistributionData] = useState({ labels: [], values: [] });
   const [repoStats, setRepoStats] = useState([]);
   const [chartLoading, setChartLoading] = useState(true);
 
@@ -149,13 +149,13 @@ function Home() {
     const loadChartData = async () => {
       setChartLoading(true);
       try {
-        const [trends, distribution, stats] = await Promise.all([
+        const [trends, stats] = await Promise.all([
           fetchActivityTrends(timeRange),
-          fetchEventDistribution(),
+          // fetchEventDistribution(),
           fetchRepoStats(),
         ]);
         setTrendData(trends);
-        setDistributionData(distribution);
+        // setDistributionData(distribution);
         setRepoStats(stats);
       } catch (error) {
         console.error("Error loading chart data:", error);
